@@ -1,1 +1,1 @@
-This is lab 9
+This is the EGR227 Github Repository
