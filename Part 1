@@ -4,3 +4,58 @@
  * Last modified: 11/3/21
  * Description: This code is made to control a PWM motor with buttons and display numbers to a 7-segment LED
  ************************************************************************************************************************/
+#include "msp.h"
+#include <math.h>
+
+void pwminit (void);
+void Port1_init(void);
+void PORT1_IRQHandler(void);
+
+uint8_t dutyduty=2;
+
+int dutyVar = 2;
+void main(void)
+{
+	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;		// stop watchdog timer
+
+	//dutyVar = 20;
+pwminit();
+Port1_init();
+
+NVIC->ISER[1] = 1 << ((PORT1_IRQn)&31);
+__enable_interrupt();
+
+
+while(1)
+{
+
+
+}
+
+}
+void pwminit (void){
+    P2->SEL0 |= BIT6;
+    P2->SEL1 &=~ BIT6;
+    P2->DIR |= BIT6;
+
+    TIMER_A0 -> CCR[0] |= 3000000/60 - 1;
+    TIMER_A0 -> CCR[3] |= 3000000 / dutyduty;
+    TIMER_A0 -> CTL |= BIT2|BIT4|BIT9;
+    TIMER_A0 -> CCTL[3] |= 7<<5;
+}
+
+void Port1_init(void){
+    P6-> SEL0 &=~ BIT1;
+    P6-> SEL1 &=~ BIT1;
+    P6-> DIR &=~ BIT1;
+    P6-> REN = BIT1; //pullup resistor
+    P6-> OUT = BIT1;
+    P6-> IES = BIT1; // Set pin to interrupt to trigger when it goes high->low
+    P6-> IE = BIT1; //enable interupts for P1.1
+    P6-> IFG = BIT1; //ckear P1 interrupt flags
+}
+
+void PORT1_IRQHandler(void){
+    if (P1->IFG&BIT1)
+        dutyduty = 0;
+}
