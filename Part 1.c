@@ -7,63 +7,79 @@
 #include "msp.h"
 #include <math.h>
 
-void pwminit (void);
-void Port1_init(void);
-void PORT1_IRQHandler(void);
+void Pin_init(void);
+void PORT6_IRQHandler(void);
+void Timer_Init(void);
+void Timer_PWM(int duty);
 
-int dutyVar = 2;
+int dutyVar = 0;
 void main(void)
 {
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;		// stop watchdog timer
 
-	//dutyVar = 20;
-pwminit();
-Port1_init();
+	Pin_init();
+	Timer_Init();
 
-NVIC->ISER[1] = 1 << ((PORT1_IRQn)&31);
-__enable_interrupt();
+	NVIC_EnableIRQ(PORT6_IRQn);  // set up to run code
+	__enable_interrupts();
 
+	while(1)
+	{
 
-while(1)
-{
-
-
-}
+	}
 
 }
-void pwminit (void){
+void Timer_PWM(int duty){               //runs timer given the specified duty cycle
+
+    TIMER_A0-> CTL = 0b1001010100;                      //Count up using smclk, clears TAOR register, /2
+    TIMER_A0-> CCR[0] = 37500 - 1;                      //TimerA will count up to 37500-1
+    if (duty == 0)
+        TIMER_A0-> CCR[4] = 0;
+    else
+        TIMER_A0-> CCR[4] = (37500 * duty / 100) - 1;   //Sets the duty cycle.
+    TIMER_A0-> CCTL[4] = 0b11100000;                    //reset/set mode
+}
+
+
+void Timer_Init(void){              //Initializes the timer
+    TIMER_A0-> CTL = 0b1001010100;                      //Count up using smclk, clears TAOR register, /2
+    TIMER_A0-> CCR[0] = 37500 - 1;                      //TimerA will count up to 37500-1
+    TIMER_A0-> CCR[4] = 0;                              //motor off to start
+    TIMER_A0-> CCTL[4] = 0b11100000;                    //reset/set mode
+}
+
+
+void Pin_init(void){
+    P6-> SEL0 &=~ (BIT0|BIT1|BIT4);
+    P6-> SEL1 &=~ (BIT0|BIT1|BIT4);
+    P6-> DIR &=~ (BIT0|BIT1|BIT4);
+    P6-> REN = (BIT0|BIT1|BIT4); //pullup resistor
+    P6-> OUT = (BIT0|BIT1|BIT4);
+    P6-> IES = (BIT0|BIT1|BIT4); // Set pin to interrupt to trigger when it goes high->low
+    P6-> IE = (BIT0|BIT1|BIT4); //enable interupts for P1.1
+    P6-> IFG = (BIT0|BIT1|BIT4); //clear P1 interrupt flags
+    
     P2->SEL0 |= BIT6;
     P2->SEL1 &=~ BIT6;
     P2->DIR |= BIT6;
-
-    TIMER_A0 -> CCR[0] |= 3000000/60 - 1;
-    TIMER_A0 -> CCR[3] |= 3000000 / dutyduty;
-    TIMER_A0 -> CTL |= BIT2|BIT4|BIT9;
-    TIMER_A0 -> CCTL[3] |= 7<<5;
 }
 
-void Port1_init(void){
-    P1-> SEL0 &=~ BIT1;
-    P1-> SEL1 &=~ BIT1;
-    P1-> DIR &=~ BIT1;
-    P1-> REN = BIT1; //pullup resistor
-    P1-> OUT = BIT1;
-    P1-> IES = BIT1; // Set pin to interrupt to trigger when it goes high->low
-    P1-> IE = BIT1; //enable interupts for P1.1
-    P1-> IFG = BIT1; //ckear P1 interrupt flags
-}
-
-void PORT1_IRQHandler()
+void PORT6_IRQHandler()
 {
-    if(P1->IFG & BIT4)
+    if(P6->IFG & BIT0)
     {
-        printf("Button P1.4 pressed\n");
-        P1->IFG  &= ~BIT4;  //clear the flag
+        dutyVar += 10;
+        P1->IFG  &= ~BIT0;  //clear the flag
     }
-    if(P1->IFG & BIT1)
+    if(P6->IFG & BIT1)
     {
-        printf("Button P1.1 pressed\n");
+        dutyVar -= 10;
         P1->IFG  &= ~BIT1;  //clear the flag
     }
-    P1->IFG = 0;
+    if(P6->IFG & BIT4){
+    	dutyVar = 0;
+	P6->IFG  &= ~BIT4;  //clear the flag
+    }
+    Timer_PWM(dutyVar);
+    P6->IFG = 0;
 }
