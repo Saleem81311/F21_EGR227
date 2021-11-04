@@ -94,7 +94,7 @@ void PORT6_IRQHandler(void){
 /****************************************************************************************
 /**
  * 7-Segment LED test code
- */
+ *
 
 void SysTick_Init();
 void SysTick_Delay(uint16_t delay);
@@ -118,7 +118,7 @@ void main(void)
    /* for(i = 0; i < n; i++)
     {
 
-    }       */
+    }
 
 	while(1)
 	{
