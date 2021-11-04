@@ -90,3 +90,57 @@ void PORT6_IRQHandler(void){
     Timer_PWM(dutyVar);
     P6->IFG = 0;
 }
+
+/****************************************************************************************
+/**
+ * 7-Segment LED test code
+ */
+
+void SysTick_Init();
+void SysTick_Delay(uint16_t delay);
+
+void main(void)
+{
+	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;		// stop watchdog timer
+	P2->SEL0 &= ~BIT5;
+	P2->SEL1 &= ~BIT5;
+	P2->DIR |= BIT5;
+	P2->REN |= BIT5;
+	P2->OUT &= ~BIT5;
+    P3->SEL0 &= ~BIT0;
+    P3->SEL1 &= ~BIT0;
+    P3->DIR |= BIT0;
+    P3->REN |= BIT0;
+    P3->OUT &= ~BIT0;
+	int val = 100000000000000000;
+	int n = 5;
+
+   /* for(i = 0; i < n; i++)
+    {
+
+    }       */
+
+	while(1)
+	{
+	      P2->OUT |= 01111111;
+	      //P3->OUT |= BIT0;
+	      SysTick_Delay(3000);
+
+	}
+
+}
+
+void SysTick_Init()
+{
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0x00FFFFFF;
+    SysTick->VAL = 32;
+    SysTick->CTRL = 0x00000005;
+}
+
+void SysTick_Delay(uint16_t delay)
+{
+    SysTick->LOAD=((delay*3000)-1);
+    SysTick->VAL = 5;
+    while((SysTick->CTRL & 0x00010000)==0);
+    **********************************************************************************************/
