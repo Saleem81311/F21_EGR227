@@ -53,6 +53,17 @@ void Port1_init(void){
     P1-> IFG = BIT1; //ckear P1 interrupt flags
 }
 
-void PORT1_IRQHandler(void){
-    if (P1->IFG&BIT1)
+void PORT1_IRQHandler()
+{
+    if(P1->IFG & BIT4)
+    {
+        printf("Button P1.4 pressed\n");
+        P1->IFG  &= ~BIT4;  //clear the flag
+    }
+    if(P1->IFG & BIT1)
+    {
+        printf("Button P1.1 pressed\n");
+        P1->IFG  &= ~BIT1;  //clear the flag
+    }
+    P1->IFG = 0;
 }
