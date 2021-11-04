@@ -5,7 +5,8 @@
  * Description: This code is made to control a PWM motor with buttons and display numbers to a 7-segment LED
  ************************************************************************************************************************/
 #include "msp.h"
-#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 void Pin_init(void);
 void PORT6_IRQHandler(void);
@@ -15,18 +16,18 @@ void Timer_PWM(int duty);
 int dutyVar = 0;
 void main(void)
 {
-	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;		// stop watchdog timer
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
 
-	Pin_init();
-	Timer_Init();
+    Pin_init();
+    Timer_Init();
 
-	NVIC_EnableIRQ(PORT6_IRQn);  // set up to run code
-	__enable_interrupts();
+    NVIC_EnableIRQ(PORT6_IRQn);  // set up to run code
+    __enable_interrupts();
 
-	while(1)
-	{
+    while(1)
+    {
 
-	}
+    }
 
 }
 void Timer_PWM(int duty){               //runs timer given the specified duty cycle
@@ -50,35 +51,41 @@ void Timer_Init(void){              //Initializes the timer
 
 
 void Pin_init(void){
-    P6-> SEL0 &=~ (BIT0|BIT1|BIT4);
-    P6-> SEL1 &=~ (BIT0|BIT1|BIT4);
-    P6-> DIR &=~ (BIT0|BIT1|BIT4);
-    P6-> REN = (BIT0|BIT1|BIT4); //pullup resistor
-    P6-> OUT = (BIT0|BIT1|BIT4);
-    P6-> IES = (BIT0|BIT1|BIT4); // Set pin to interrupt to trigger when it goes high->low
-    P6-> IE = (BIT0|BIT1|BIT4); //enable interupts for P1.1
-    P6-> IFG = (BIT0|BIT1|BIT4); //clear P1 interrupt flags
-    
-    P2->SEL0 |= BIT6;
-    P2->SEL1 &=~ BIT6;
-    P2->DIR |= BIT6;
+    P6-> SEL0 &=~ (BIT5|BIT1|BIT4);
+    P6-> SEL1 &=~ (BIT5|BIT1|BIT4);
+    P6-> DIR &=~ (BIT5|BIT1|BIT4);
+    P6-> REN |= (BIT5|BIT1|BIT4); //pullup resistor
+    P6-> OUT |= (BIT5|BIT1|BIT4);
+    P6-> IE |= (BIT5|BIT1|BIT4); //enable interupts for P1.1
+    P6-> IES |= (BIT5|BIT1|BIT4); // Set pin to interrupt to trigger when it goes high->low
+    P6-> IFG &= ~(BIT5|BIT1|BIT4); //clear P1 interrupt flags
+
+    P2->SEL0 |= BIT7;
+    P2->SEL1 &=~ BIT7;
+    P2->DIR |= BIT7;
 }
 
-void PORT6_IRQHandler()
-{
-    if(P6->IFG & BIT0)
-    {
-        dutyVar += 10;
-        P1->IFG  &= ~BIT0;  //clear the flag
-    }
-    if(P6->IFG & BIT1)
-    {
-        dutyVar -= 10;
-        P1->IFG  &= ~BIT1;  //clear the flag
+void PORT6_IRQHandler(void){
+    if(P6->IFG & BIT1){
+        printf("B1 Pressed!\n");
+        if (dutyVar > 90)
+            dutyVar = 100;
+        else
+            dutyVar += 10;
+        P6->IFG  &= ~BIT1;  //clear the flag
     }
     if(P6->IFG & BIT4){
-    	dutyVar = 0;
-	P6->IFG  &= ~BIT4;  //clear the flag
+        printf("B2 Pressed!\n");
+        if (dutyVar < 10)
+            dutyVar = 0;
+        else
+            dutyVar -= 10;
+        P6->IFG  &= ~BIT4;  //clear the flag
+    }
+    if(P6->IFG & BIT5){
+        printf("B3 Pressed!\n");
+        dutyVar = 0;
+        P6->IFG  &= ~BIT5;  //clear the flag
     }
     Timer_PWM(dutyVar);
     P6->IFG = 0;
